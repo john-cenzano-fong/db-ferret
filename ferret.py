@@ -1,72 +1,113 @@
-from datetime import datetime, timedelta
+import argparse
+from datetime import datetime
 import os
 import time
 
 from sqlalchemy import create_engine
 from sqlalchemy.engine import reflection
-import sqlalchemy.types as types
 
-
-# Connection info
-db_type = "postgres"
-user = ""
-pw = ""
-host = ""
-port = ""
-db = ""
-ssl_mode = False
-
-def elapsed_time(seconds):
-    sec = timedelta(seconds=seconds)
-    d = datetime(1, 1, 1) + sec
-    return "%d hr %d min %d sec" % (d.hour, d.minute, d.second)
-
-
-def incremental_marker(count, increment=5):
-    if (s + 1) % increment == 0:
-        return "*"
-    else:
-        return " "
-
-# This is in here for right now to deal with more complicated postgres type
-class XMLType(types.UserDefinedType):
-    def get_col_spec(self):
-        return 'XML'
-
-    def bind_processor(self, dialect):
-        def process(value):
-            if value is not None:
-                if isinstance(value, str):
-                    return value
-                else:
-                    return etree.tostring(value)
-            else:
-                return None
-        return process
-
-    def result_processor(self, dialect, coltype):
-        def process(value):
-            if value is not None:
-                value = etree.fromstring(value)
-            return value
-        return process
+import xmltype
+from utils import elapsed_time, incremental_marker
 
 
 CWD = os.getcwd()
 TIMESTAMP = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
 
-# Connect to the db and use reflection to gather db metadata
-conn_string = "{db_type}://{user}:{pw}@{host}:{port}/{db}".format(
-    db_type=db_type, user=user, pw=pw, host=host, port=port, db=db)
-if ssl_mode:
-    engine = create_engine(conn_string, connect_args={'sslmode':'require'})
-else:
-    engine = create_engine(conn_string)
-insp = reflection.Inspector.from_engine(engine)
+
+def parse_args():
+    """
+    :return:
+    """
+    parser = argparse.ArgumentParser(
+        description="ferret collects metadata from a database via "
+                    "reflection, provide connection information to run")
+
+    parser.add_argument(
+        '-t',
+        '--db_type',
+        dest='db_type',
+        help="The database type, such as postgres or redshift used "
+             "for the connection string by sqlalchemy.",
+        default="postgres"
+    )
+    parser.add_argument(
+        '-u',
+        '--user',
+        dest='user',
+        help="The database user used to login. For postgres, at least, "
+             "any user normally will be able to crawl the database."
+    )
+    parser.add_argument(
+        '-pw',
+        '--pw',
+        dest='pw',
+        help="Password to connect to the db with the specified user. "
+             "Information is passed through to the db but not recorded."
+    )
+    parser.add_argument(
+        '-hn',
+        '--hostname',
+        dest='hostname',
+        help="The host where the database is located."
+    )
+    parser.add_argument(
+        '-p',
+        '--port',
+        dest='port',
+        help="The port used by the database for connections."
+    )
+    parser.add_argument(
+        '-d',
+        '--db',
+        dest='db',
+        help="The database instance of the database."
+    )
+    parser.add_argument(
+        '-s',
+        '--ssl_mode',
+        dest='ssl_mode',
+        help="A boolean indicating if connections must be encrypted "
+             "to the database with SSL.",
+        default=False
+    )
+    parser.add_argument(
+        '--debug',
+        dest='debug',
+        help="Collects and diagnoses will be prepared but not run",
+        action='store_true',
+        default=False
+    )
+    parser.add_argument(
+        '--log_level',
+        dest='log_level',
+        help="Sets the logging severity level",
+        default='INFO'
+    )
+    args = parser.parse_args()
+    return args
+
+
+def get_db_inspector(db_type, user, pw, hostname, port, db, ssl_mode):
+    # Connect to the db and use reflection to gather db metadata
+    conn_string = "{db_type}://{user}:{pw}@{hostname}:{port}/{db}".format(
+        db_type=db_type, user=user, pw=pw, hostname=hostname, port=port, db=db)
+    if ssl_mode:
+        engine = create_engine(conn_string,
+                               connect_args={"sslmode": "require"})
+    else:
+        engine = create_engine(conn_string)
+    return reflection.Inspector.from_engine(engine)
+
+
+args = parse_args()
+insp = get_db_inspector(
+    args.db_type, args.user, args.pw, args.hostname,
+    args.port, args.db, args.ssl_mode)
+
 
 # Column definitions for entire db
 file_name_columns = "{db_type}_{db}_columns_{timestamp}.tsv".format(
-    db_type=db_type, db=db, timestamp=TIMESTAMP)
+    db_type=args.db_type, db=args.db, timestamp=TIMESTAMP)
 table_count = 0
 column_count = 0
 schemas = insp.get_schema_names()
@@ -75,7 +116,8 @@ schema_count = len(schemas)
 column_time_start = time.time()
 print("Outputting column metadata file for {schema_count}"
       " schemas: {file_name}".format(
-          schema_count=schema_count, file_name=os.path.join(CWD, file_name_columns)))
+          schema_count=schema_count,
+          file_name=os.path.join(CWD, file_name_columns)))
 
 # Write to a file
 with open(file_name_columns, "w") as f:
@@ -109,7 +151,8 @@ with open(file_name_columns, "w") as f:
                                 nullable=column["nullable"],
                                 default=column["default"]).encode('utf-8'))
                 except Exception as e:
-                    print("Failed on item {i}: {error}".format(i=i, error=str(e)))
+                    print("Failed on item {i}: {error}".format(
+                        i=i, error=str(e)))
                     try:
                         print("Table {table}".format(table=table))
                     except:
@@ -130,12 +173,13 @@ print("Total time taken: {}".format(
 
 # Write view definitions to a separate file
 file_name_views = "{db_type}_{db}_views_{timestamp}.tsv".format(
-    db_type=db_type, db=db, timestamp=TIMESTAMP)
+    db_type=args.db_type, db=args.db, timestamp=TIMESTAMP)
 
 view_count = 0
 print("Outputting view metadata for {schema_count} schemas:"
       " {file_name}".format(
-        schema_count=schema_count, file_name=os.path.join(CWD, file_name_views)))
+        schema_count=schema_count,
+        file_name=os.path.join(CWD, file_name_views)))
 view_time_start = time.time()
 with open(file_name_views, "w") as f:
     for s, schema in enumerate(schemas):
