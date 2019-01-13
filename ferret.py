@@ -1,16 +1,20 @@
 from datetime import datetime, timedelta
+import os
 import time
 
 from sqlalchemy import create_engine
 from sqlalchemy.engine import reflection
+import sqlalchemy.types as types
 
 
+# Connection info
+db_type = "postgres"
 user = ""
 pw = ""
 host = ""
 port = ""
 db = ""
-
+ssl_mode = False
 
 def elapsed_time(seconds):
     sec = timedelta(seconds=seconds)
@@ -24,27 +28,54 @@ def incremental_marker(count, increment=5):
     else:
         return " "
 
+# This is in here for right now to deal with more complicated postgres type
+class XMLType(types.UserDefinedType):
+    def get_col_spec(self):
+        return 'XML'
 
+    def bind_processor(self, dialect):
+        def process(value):
+            if value is not None:
+                if isinstance(value, str):
+                    return value
+                else:
+                    return etree.tostring(value)
+            else:
+                return None
+        return process
+
+    def result_processor(self, dialect, coltype):
+        def process(value):
+            if value is not None:
+                value = etree.fromstring(value)
+            return value
+        return process
+
+
+CWD = os.getcwd()
 TIMESTAMP = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
 
 # Connect to the db and use reflection to gather db metadata
-conn_string = "postgresql://{user}:{pw}@{host}:{port}/{db}".format(
-    user=user, pw=pw, host=host, port=port, db=db)
-engine = create_engine(conn_string)
+conn_string = "{db_type}://{user}:{pw}@{host}:{port}/{db}".format(
+    db_type=db_type, user=user, pw=pw, host=host, port=port, db=db)
+if ssl_mode:
+    engine = create_engine(conn_string, connect_args={'sslmode':'require'})
+else:
+    engine = create_engine(conn_string)
 insp = reflection.Inspector.from_engine(engine)
-schemas = insp.get_schema_names()
-
-schema_count = len(schemas)
 
 # Column definitions for entire db
-file_name_columns = "{db}_columns_{timestamp}.tsv".format(
-    db=db, timestamp=TIMESTAMP)
+file_name_columns = "{db_type}_{db}_columns_{timestamp}.tsv".format(
+    db_type=db_type, db=db, timestamp=TIMESTAMP)
 table_count = 0
 column_count = 0
+schemas = insp.get_schema_names()
+schema_count = len(schemas)
+
 column_time_start = time.time()
 print("Outputting column metadata file for {schema_count}"
       " schemas: {file_name}".format(
-          schema_count=schema_count, file_name=file_name_columns))
+          schema_count=schema_count, file_name=os.path.join(CWD, file_name_columns)))
 
 # Write to a file
 with open(file_name_columns, "w") as f:
@@ -77,9 +108,12 @@ with open(file_name_columns, "w") as f:
                                 type=column["type"],
                                 nullable=column["nullable"],
                                 default=column["default"]).encode('utf-8'))
-                except:
-                    print "Failed on item {i}".format(i=i)
-                    raise
+                except Exception as e:
+                    print("Failed on item {i}: {error}".format(i=i, error=str(e)))
+                    try:
+                        print("Table {table}".format(table=table))
+                    except:
+                        pass
         schema_time_end = time.time()
         print("\t\t\t  column count: {schema_column_count}".format(
             schema_column_count=schema_column_count))
@@ -95,12 +129,13 @@ print("Total time taken: {}".format(
 
 
 # Write view definitions to a separate file
-file_name_views = "{db}_views_{timestamp}.tsv".format(
-    db=db, timestamp=TIMESTAMP)
+file_name_views = "{db_type}_{db}_views_{timestamp}.tsv".format(
+    db_type=db_type, db=db, timestamp=TIMESTAMP)
+
 view_count = 0
 print("Outputting view metadata for {schema_count} schemas:"
       " {file_name}".format(
-        schema_count=schema_count, file_name=file_name_views))
+        schema_count=schema_count, file_name=os.path.join(CWD, file_name_views)))
 view_time_start = time.time()
 with open(file_name_views, "w") as f:
     for s, schema in enumerate(schemas):
@@ -113,14 +148,19 @@ with open(file_name_views, "w") as f:
             star=incremental_marker(s), schema=schema.upper()))
         print("\t\t\t    view count: {view_count}".format(
             view_count=schema_view_count))
+
         for i, view in enumerate(view_list):
             sql = insp.get_view_definition(view_name=view, schema=schema)
             try:
                 f.write(u"CREATE VIEW {schema}.{view} AS {sql}\n\n".format(
                     schema=schema, view=view, sql=sql).encode('utf-8'))
-            except:
-                print("Failed on item {i}".format(i=i))
-                raise
+            except Exception as e:
+                print("Failed on item {i}: {error}".format(i=i, error=str(e)))
+                try:
+                    print("Table {table}".format(table=table))
+                except:
+                    pass
+
         schema_time_end = time.time()
         print("\t\t\texecution time: {}".format(
             elapsed_time(schema_time_end - schema_time_start)))
