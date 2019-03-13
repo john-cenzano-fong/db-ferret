@@ -9,6 +9,13 @@ from snowflake.sqlalchemy import URL
 
 from utils import elapsed_time, incremental_marker
 
+"""
+The purpose of this code is to retrieve basic catalog information 
+about a database. Run it something like this:
+
+python ferret.py --db_type redshift --user <user> --pw <pw> --hostname <host> -d <db>
+
+"""
 
 CWD = os.getcwd()
 TIMESTAMP = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
@@ -16,8 +23,11 @@ TIMESTAMP = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
 
 def parse_args():
     """
-    :return:
+    Parse command line arguments passed to the script
+
+    :return: args
     """
+
     parser = argparse.ArgumentParser(
         description="ferret collects metadata from a database via "
                     "reflection, provide connection information to run")
