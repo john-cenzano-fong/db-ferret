@@ -1,0 +1,2 @@
+{"public": {"transactions_max": "CREATE OR REPLACE VIEW transactions_max AS SELECT MAX(id) FROM public.transactions;"}}
+

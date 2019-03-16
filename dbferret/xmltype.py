@@ -1,9 +1,11 @@
+# -*- coding: utf-8 -*-
+import __future__
 import sqlalchemy.types as types
 
 # This is in here for right now to deal with more complicated postgres type
 class XMLType(types.UserDefinedType):
     def get_col_spec(self):
-        return 'XML'
+        return "XML"
 
     def bind_processor(self, dialect):
         def process(value):

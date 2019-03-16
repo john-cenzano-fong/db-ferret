@@ -1,0 +1,12 @@
+# Files python likes to make
+__pycache__/
+*.pyc
+
+# Output files from processing
+*.tsv
+*.sql
+data/
+
+# IPython Notebook
+.ipynb_checkpoints
+
