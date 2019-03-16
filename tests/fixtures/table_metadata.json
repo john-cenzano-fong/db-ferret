@@ -1,0 +1,71 @@
+{
+	"public": {
+		"transactions": [{
+			"default": null,
+			"type": "BIGINT()",
+			"name": "id",
+			"nullable": false
+		}, {
+			"default": null,
+			"type": "VARCHAR(length = 500)",
+			"name": "content",
+			"nullable": true
+		}, {
+			"default": null,
+			"type": "VARCHAR(length = 30)",
+			"name": "category",
+			"nullable": true
+		}, {
+			"default": null,
+			"type": "TIMESTAMP(timezone = True)",
+			"name": "transaction_tz",
+			"nullable": true
+		}, {
+			"default": null,
+			"type": "BIGINT()",
+			"name": "user_id",
+			"nullable": true
+		}, {
+			"default": null,
+			"type": "VARCHAR(length = 50)",
+			"name": "authorization_id",
+			"nullable": true
+		}, {
+			"default": "(\"now\"::text)::timestamp without time zone",
+			"type": "TIMESTAMP(timezone = True)",
+			"name": "insert_tz",
+			"nullable": true
+		}],
+		"alerts": [{
+			"default": null,
+			"type": "BIGINT()",
+			"name": "id",
+			"nullable": false
+		}, {
+			"default": null,
+			"type": "VARCHAR(length = 500)",
+			"name": "content",
+			"nullable": true
+		}, {
+			"default": null,
+			"type": "VARCHAR(length = 30)",
+			"name": "severity",
+			"nullable": true
+		}, {
+			"default": null,
+			"type": "TIMESTAMP(timezone = True)",
+			"name": "date_sent_tz",
+			"nullable": true
+		}, {
+			"default": null,
+			"type": "TIMESTAMP(timezone = True)",
+			"name": "date_read_tz",
+			"nullable": true
+		}, {
+			"default": "(\"now\"::text)::timestamp without time zone",
+			"type": "TIMESTAMP(timezone = True)",
+			"name": "insert_tz",
+			"nullable": true
+		}]
+	}
+}
