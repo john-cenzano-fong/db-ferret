@@ -145,8 +145,8 @@ class DbFerret(object):
         logging.info("Total column count: {column_count}".format(
             column_count=total_column_count))
         self.table_metadata = table_metadata
-        with open("table_metadata.json", "w") as tm:
-            tm.write(str(self.table_metadata))
+        # with open("data/table_metadata.json", "w") as tm:
+        #    tm.write(str(self.table_metadata))
         return self.table_metadata
 
     def extract_view_ddl(self):
@@ -194,6 +194,6 @@ class DbFerret(object):
         logging.info(" Total view count: {view_count}".format(
             view_count=total_view_count))
         self.view_ddl = view_ddl
-        with open("view_ddl.json", "w") as tm:
-            tm.write(str(self.view_ddl))
+        # with open("data/view_ddl.json", "w") as tm:
+        #    tm.write(str(self.view_ddl))
         return self.view_ddl

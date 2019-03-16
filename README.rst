@@ -1,6 +1,6 @@
 db-ferret
 =========
-A tool for ferreting out metadata about databases. It currently defaults to redshift database and will work for postgresql databases as well.
+A tool for ferreting out metadata about databases. It currently defaults to redshift database and will work for postgresql and snowflake databases as well.
 
 
 Functionality
@@ -31,7 +31,7 @@ Run ``make test`` to run unit tests.
 
 Execution
 =========
-So far db-ferret has only been tested with postgres and redshift but theoretically other db types will work if you populate the correct `SQLAlchemy engine type <https://docs.sqlalchemy.org/en/latest/core/engines.html>_` though there could be proprietary data types in those databases that could be hard for a plain vanilla SQLAlchemy install to handle.
+So far db-ferret has only been tested with snowflake, postgres and redshift but theoretically other db types will work if you populate the correct `SQLAlchemy engine type <https://docs.sqlalchemy.org/en/latest/core/engines.html>_` though there could be proprietary data types in those databases that could be hard for a plain vanilla SQLAlchemy install to handle.
 
 
 Typically you will run with a command like such is this for redshift:
@@ -42,10 +42,13 @@ For postgres specify the engine_type, port and perhaps you'll need ssl_mode:
 
     python driver.py --user <user> --pw <password> --hostname <hostname> -d <database> --engine_type postgresql -p 5432 --ssl_mode True
 
+For snowflake you also need to reference a warehouse:
+
+    python runner.py --user <user> --pw <password> --hostname <hostname> -d <database> -e snowflake -w <warehouse> 
 
 The following command line options are available to go beyond basic assumptions:
 
--e             The SQLAlchemy engine type, such as postgresql or redshift (default is redshift).
+-e             The SQLAlchemy engine type, such as snowflake, postgresql or redshift (default is redshift).
 -u             The database user used to login. For postgres, at least, any user normally will be able to crawl the database.
 -pw            Password to connect to the db with the specified user. Information is passed through to the db but not recorded.
 -hn            The hostname where the database is located.

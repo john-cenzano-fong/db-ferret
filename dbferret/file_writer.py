@@ -85,18 +85,15 @@ class FileWriter(object):
                                         schema=schema,
                                         table=table,
                                         name=col["name"],
-                                        type=col["type"],
+                                        type=col["type"].__visit_name__,
                                         nullable=col["nullable"],
                                         default=col["default"]).encode("utf-8"))
                         # There may be some obscure values that are hard to logging.info
                         except Exception as e:
-                            logging.info(
-                                "Failed: {error}".format(error=str(e)))
-                            try:
-                                logging.info(
-                                    "Table {table}".format(table=table))
-                            except:
-                                pass
+                            logging.warn(
+                                "Could not write metadata for "
+                                "table {table} column: {error}".format(
+                                    table=table, col=col["name"], error=str(e)))
         return tsv_path
 
     def output_view_ddl_to_sql(self, view_ddl, path=None):
