@@ -10,8 +10,9 @@ from snowflake.sqlalchemy import URL
 from dbferret.helpers import incremental_marker, elapsed_time
 
 
-CONNECTION_MAP = {"redshift": "postgresql",
-                  "postgres": "postgresql"}
+CONNECTION_MAP = {"redshift": {"engine": "postgresql", "port": 5439},
+                  "postgres": {"engine": "postgresql", "port": 5432},
+                  "mysql": {"engine": "mysql+pymysql", "port": 3306}}
 
 logging = logging.getLogger(__name__)
 
@@ -55,17 +56,19 @@ class DbFerret(object):
         self.ssl_mode = ssl_mode
         self.engine_type = engine_type
         self.schema = schema
-        self.port = port
         self.warehouse = warehouse
         self.schema_list = schema_list
         self.conn_string = None
         self.table_metadata = {}
         self.view_ddl = {}
 
+        print port
         if self.engine_type in CONNECTION_MAP:
-            self.conn_type = CONNECTION_MAP[self.engine_type]
+            self.conn_type = CONNECTION_MAP[self.engine_type]["engine"]
+            self.port = port or CONNECTION_MAP[self.engine_type]["port"]
         else:
             self.conn_type = self.engine_type.lower()
+            self.port = port
 
         if self.conn_type == "snowflake":
             self.engine = create_engine(URL(

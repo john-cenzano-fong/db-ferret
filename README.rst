@@ -36,11 +36,11 @@ So far db-ferret has only been tested with snowflake, postgres and redshift but 
 
 Typically you will run with a command like such is this for redshift:
 
-`` python driver.py --user <user> --pw <password> --hostname <hostname> -d <database>``
+`` python runner.py --user <user> --pw <password> --hostname <hostname> -d <database>``
 
-For postgres specify the engine_type, port and perhaps you'll need ssl_mode:
+For postgres specify the engine_type and perhaps you'll need ssl_mode, and let's say you don't use the default port of 5432 but instead use 5444:
 
-    python driver.py --user <user> --pw <password> --hostname <hostname> -d <database> --engine_type postgresql -p 5432 --ssl_mode True
+    python runner.py --user <user> --pw <password> --hostname <hostname> -d <database> --engine_type postgresql -p 5444 --ssl_mode True
 
 For snowflake you also need to reference a warehouse:
 
@@ -52,7 +52,7 @@ The following command line options are available to go beyond basic assumptions:
 -u             The database user used to login. For postgres, at least, any user normally will be able to crawl the database.
 -pw            Password to connect to the db with the specified user. Information is passed through to the db but not recorded.
 -hn            The hostname where the database is located.
--p             The port used by the database for connections (default is 5439).
+-p             The port used by the database for connections.
 -d             The database instance.
 -l             A boolean indicating if connections must be encrypted to the database with SSL.
 --log_level    Sets the logging severity level.

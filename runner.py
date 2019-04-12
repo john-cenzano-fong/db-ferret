@@ -82,8 +82,7 @@ def parse_args():
         "-p",
         "--port",
         dest="port",
-        help="The port used by the database for connections.",
-        default="5439"
+        help="The port used by the database for connections."
     )
     parser.add_argument(
         "-d",
