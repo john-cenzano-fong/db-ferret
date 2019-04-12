@@ -36,7 +36,7 @@ So far db-ferret has only been tested with snowflake, postgres and redshift but 
 
 Typically you will run with a command like such is this for redshift:
 
-`` python runner.py --user <user> --pw <password> --hostname <hostname> -d <database>``
+    python runner.py --user <user> --pw <password> --hostname <hostname> -d <database>
 
 For postgres specify the engine_type and perhaps you'll need ssl_mode, and let's say you don't use the default port of 5432 but instead use 5444:
 
